@@ -48,7 +48,7 @@ jobs:
         run: ${{ matrix.command }} build --verbose --locked --release --target ${{ matrix.target }}
 
       - name: List directory
-        run: ls
+        run: ls target/release
       
       - name: Upload Macos binary
         if: runner.os == 'MacOS'
