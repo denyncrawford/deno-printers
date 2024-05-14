@@ -1,10 +1,11 @@
 import { dlopen } from "jsr:@denosaurs/plug";
 import { Printer } from "./types.ts";
+import metadata from "./deno.json" with { type: "json" };
 
 const { symbols } = await dlopen(
   {
     name: "printer_bindings",
-    url: "/Users/genesissaraicarvajalsiverio/Projects/xirect/print/printer-bindings/target/debug/",
+    url: `https://github.com/denyncrawford/deno-printers/releases/download/${metadata.version}/`,
   },
   
   {

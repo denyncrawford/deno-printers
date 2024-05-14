@@ -1,4 +1,5 @@
 {
+    "version": "0.1.10",
     "tasks": {
         "build": "deno_bindgen -o bindings.ts"
     }
