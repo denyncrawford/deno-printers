@@ -45,7 +45,7 @@ jobs:
           cargo binstall --no-confirm cross
  
       - name: Build Binary
-        run: ${{ matrix.command }} build --verbose --locked --release --target ${{ matrix.target }}
+        run: ${{ matrix.command }} build --verbose --locked --release --lib --target ${{ matrix.target }}
 
       - name: List directory
         run: ls target/release
