@@ -1,3 +1,7 @@
+
+/**
+ * A printer object returned by the getPrinters() function {@link getPrinters}.
+ */
 export interface Printer {
     name: string
     system_name: string
