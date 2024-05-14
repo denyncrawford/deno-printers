@@ -16,7 +16,7 @@ jobs:
           - name: linux-amd64
             runner: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            command: cargo
+            command: cross
           # Windows
           - name: win-amd64
             runner: windows-latest
@@ -37,12 +37,15 @@ jobs:
  
       # Only install cross if we need it
       # Install via cargo-binstall which I found faster
-      - name: Install Deno bindgen
+      - name: Install Cross
+        if: matrix.command == 'cross'
         shell: bash
-        run: cargo install deno_bindgen_cli
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall --no-confirm cross
  
       - name: Build Binary
-        run: deno_bindgen --release
+        run: ${{ matrix.command }} build --lib --release 
 
       - name: List directory
         run: ls target/release
