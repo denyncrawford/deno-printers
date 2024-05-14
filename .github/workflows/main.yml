@@ -46,7 +46,10 @@ jobs:
  
       - name: Build Binary
         run: ${{ matrix.command }} build --verbose --locked --release --target ${{ matrix.target }}
-        
+
+      - name: List directory
+        run: ls
+      
       - name: Upload Macos binary
         if: runner.os == 'MacOS'
         uses: actions/upload-artifact@v3
