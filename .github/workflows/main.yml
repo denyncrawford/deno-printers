@@ -61,7 +61,7 @@ jobs:
           name: libprinter_bindings.dylib
           path: target/release/libprinter_bindings.dylib
 
-      - name: Release MacOS binary Zip
+      - name: Release MacOS binary
         if: runner.os == 'MacOS'
         uses: svenstaro/upload-release-action@v2
         with:
@@ -91,14 +91,14 @@ jobs:
           overwrite: true
 
       - name: Upload Windows binary
-        if: runner.os == 'Linux'
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
           name: printer_bindings.dll
           path: target/release/printer_bindings.dll
 
       - name: Release Windows binary
-        if: runner.os == 'Linux'
+        if: runner.os == 'Windows'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_name: denyncrawford/deno-printers
