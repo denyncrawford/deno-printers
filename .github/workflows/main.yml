@@ -1,4 +1,4 @@
-name: Release
+name: Build
 
 permissions:
   contents: write
@@ -6,51 +6,100 @@ permissions:
 on:
   release:
     types: [published]
-
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: taiki-e/create-gh-release-action@v1
-        with:
-          # (required) GitHub token for creating GitHub Releases.
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  upload-assets:
-    needs: create-release
+  build:
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-          - target: x86_64-apple-darwin
-            os: macos-latest
-          - target: aarch64-apple-darwin
-            os: macos-latest
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-    runs-on: ${{ matrix.os }}
+          # Linux config
+          - name: linux-amd64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            command: cargo
+          # Windows
+          - name: win-amd64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            command: cargo
+          # MacOs Arm
+          - name: macos-arm64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+          # MacOs 64
+          - name: macos-amd64
+            runner: macos-latest
+            target: x86_64-apple-darwin
+ 
     steps:
-      - uses: actions/checkout@v4
-      - uses: taiki-e/upload-rust-binary-action@v1
+      - name: Checkout
+        uses: actions/checkout@v3
+ 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+ 
+      # Only install cross if we need it
+      # Install via cargo-binstall which I found faster
+      - name: Install Cross
+        if: matrix.command == 'cross'
+        shell: bash
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall --no-confirm cross
+ 
+      - name: Build Binary
+        run: ${{ matrix.command }} build --verbose --locked --release --target ${{ matrix.target }}
+        
+      - name: Upload Macos binary
+        if: runner.os == 'MacOS'
+        uses: actions/upload-artifact@v3
         with:
-          # (required) Comma-separated list of binary names (non-extension portion of filename) to build and upload.
-          # Note that glob pattern is not supported yet.
-          bin: printer-bindings
-          # (optional) Target triple, default is host triple.
-          # This is optional but it is recommended that this always be set to
-          # clarify which target you are building for if macOS is included in
-          # the matrix because GitHub Actions changed the default architecture
-          # of macos-latest since macos-14.
-          target: ${{ matrix.target }}
-          # (optional) On which platform to distribute the `.tar.gz` file.
-          # [default value: unix]
-          # [possible values: all, unix, windows, none]
-          tar: none
-          # (optional) On which platform to distribute the `.zip` file.
-          # [default value: windows]
-          # [possible values: all, unix, windows, none]
-          zip: none
-          # (required) GitHub token for uploading assets to GitHub Releases.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          name: libprinter_bindings.dylib
+          path: target/release/libprinter_bindings.dylib
+
+      - name: Release MacOS binary Zip
+        if: runner.os == 'MacOS'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_name: denyncrawford/deno-printers
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/libprinter_bindings.dylib
+          tag: ${{ github.event.release.tag_name }}
+          asset_name: libprinter_bindings.dylib
+          overwrite: true
+          
+      - name: Upload Linux binary
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v3
+        with:
+          name: libprinter_bindings.so
+          path: target/release/libprinter_bindings.so
+
+      - name: Release Linux binary
+        if: runner.os == 'Linux'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_name: denyncrawford/deno-printers
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/libprinter_bindings.so
+          tag: ${{ github.event.release.tag_name }}
+          asset_name: libprinter_bindings.so
+          overwrite: true
+
+      - name: Upload Windows binary
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v3
+        with:
+          name: printer_bindings.dll
+          path: target/release/printer_bindings.dll
+
+      - name: Release Windows binary
+        if: runner.os == 'Linux'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_name: denyncrawford/deno-printers
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/printer_bindings.dll
+          tag: ${{ github.event.release.tag_name }}
+          asset_name: printer_bindings.dll
+          overwrite: true
