@@ -37,15 +37,12 @@ jobs:
  
       # Only install cross if we need it
       # Install via cargo-binstall which I found faster
-      - name: Install Cross
-        if: matrix.command == 'cross'
+      - name: Install Deno bindgen
         shell: bash
-        run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall --no-confirm cross
+        run: cargo install deno_bindgen_cli
  
       - name: Build Binary
-        run: ${{ matrix.command }} build --verbose --locked --release --lib --target ${{ matrix.target }}
+        run: deno_bindgen --release
 
       - name: List directory
         run: ls target/release
