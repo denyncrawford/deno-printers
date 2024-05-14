@@ -1,3 +1,8 @@
+/**
+* This module contains functions for interacting with hardware printers.
+* @module
+*/
+
 import { dlopen } from "jsr:@denosaurs/plug@1.0.6";
 import type { Printer } from "./types.ts";
 import metadata from "./deno.json" with { type: "json" };
