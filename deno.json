@@ -1,6 +1,6 @@
 {
     "name": "@denyncrawford/printers",
-    "version": "0.1.15",
+    "version": "0.1.16",
     "exports": "./mod.ts",
     "tasks": {
         "build": "deno_bindgen -o bindings.ts"
