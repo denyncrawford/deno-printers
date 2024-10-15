@@ -39,16 +39,20 @@ impl<'a> Serialize for PrinterWrapper<'a> {
 
 #[deno_bindgen]
 fn get_printer_by_name(name: *mut i8) -> *mut i8 {
-    //
-    match printers::get_printer_by_name(unsafe { CStr::from_ptr(name).to_str().unwrap() }) {
-        Some(printer) => {
-            let printer_wrapper = PrinterWrapper { printer: &printer };
-            let printer_json = CString::new(serde_json::to_string(&printer_wrapper).unwrap())
-                .unwrap()
-                .into_raw();
-            printer_json
+    unsafe {
+        match CStr::from_ptr(name).to_str() {
+            Ok(name_str) => match printers::get_printer_by_name(name_str) {
+                Some(printer) => {
+                    let printer_wrapper = PrinterWrapper { printer: &printer };
+                    match serde_json::to_string(&printer_wrapper) {
+                        Ok(json_str) => CString::new(json_str).unwrap().into_raw(),
+                        Err(_) => std::ptr::null_mut(),
+                    }
+                }
+                None => std::ptr::null_mut(),
+            },
+            Err(_) => std::ptr::null_mut(),
         }
-        None => std::ptr::null_mut(),
     }
 }
 
@@ -72,21 +76,57 @@ fn get_printers() -> *mut i8 {
 #[deno_bindgen]
 fn print(printer: *mut i8, text: *mut i8, job_name: *mut i8) -> bool {
     unsafe {
-        let printer = printers::get_printer_by_name(CStr::from_ptr(printer).to_str().unwrap()).unwrap();
-        let text = CStr::from_ptr(text).to_str().unwrap().as_bytes();
-        let job_name = Some(CStr::from_ptr(job_name).to_str().unwrap());
+        let printer_str = match CStr::from_ptr(printer).to_str() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        let text_str = match CStr::from_ptr(text).to_str() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        let job_name_str = if !job_name.is_null() {
+            match CStr::from_ptr(job_name).to_str() {
+                Ok(s) => Some(s),
+                Err(_) => return false,
+            }
+        } else {
+            None
+        };
 
-        return printer.print(text, job_name).unwrap();
+        if let Some(printer) = printers::get_printer_by_name(printer_str) {
+            printer
+                .print(text_str.as_bytes(), job_name_str)
+                .unwrap_or(false)
+        } else {
+            false
+        }
     }
 }
 
 #[deno_bindgen]
 fn print_file(printer: *mut i8, file: *mut i8, job_name: *mut i8) -> bool {
     unsafe {
-        let printer = printers::get_printer_by_name(CStr::from_ptr(printer).to_str().unwrap()).unwrap();
-        let file = CStr::from_ptr(file).to_str().unwrap();
-        let job_name = Some(CStr::from_ptr(job_name).to_str().unwrap());
+        let printer_str = match CStr::from_ptr(printer).to_str() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        let file_str = match CStr::from_ptr(file).to_str() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        let job_name_str = if !job_name.is_null() {
+            match CStr::from_ptr(job_name).to_str() {
+                Ok(s) => Some(s),
+                Err(_) => return false,
+            }
+        } else {
+            None
+        };
 
-        return printer.print_file(file, job_name).unwrap();
+        if let Some(printer) = printers::get_printer_by_name(printer_str) {
+            printer.print_file(file_str, job_name_str).unwrap_or(false)
+        } else {
+            false
+        }
     }
 }
